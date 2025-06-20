@@ -34,7 +34,6 @@ app.use('/assets', express.static('public/assets'));
 
 
 app.use('/auth',auth);
-//not sure about coins yetttttttttttttttttttttttt
 app.use('/coins',    coins);
 app.use('/child',    child);
 app.use('/diary',    diary);
