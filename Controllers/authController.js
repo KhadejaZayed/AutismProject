@@ -117,4 +117,36 @@ exports.loginUser=(request,response)=>{
     });
 };
 
+//Change Password (Ebraam)
+exports.changePassword = async (req, res) => {
+  const { email, oldPassword, newPassword } = req.body;
+  
+  if (!email || !oldPassword || !newPassword) {
+    return res.status(400).json({ message: 'all fields are required!' });
+  }
+
+  try {
+    //find user in DB
+    const user = await userModel.findOne({email});
+    if (!user)
+        return res.status(404).json({ message: 'User not found' });
+
+    //Check if the old password is correct
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch)
+        return res.status(401).json({ message: 'Old password incorrect' });
+
+    //hashing new password
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    
+    //update old password with new one
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating password', error: err.message });
+  }
+};
+
 // TODO: Add Logout Function
