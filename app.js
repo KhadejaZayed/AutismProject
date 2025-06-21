@@ -14,7 +14,7 @@ const auth     = require("./Routes/authRoutes"),
       diary    = require('./Routes/diaryRoutes'),
       question = require('./Routes/questionRoutes'),
       avatar   = require('./Routes/avatarRoutes'),
-      arLetter = require('./Routes/arLetterRoute');
+      letter   = require('./Routes/letterRoute');
 
 connect.then(()=>{
     console.log("DB connects successfully");
@@ -40,7 +40,7 @@ app.use('/child',    child);
 app.use('/diary',    diary);
 app.use('/question', question);
 app.use('/avatar',   avatar);
-app.use('/arLetter', arLetter);
+app.use('/letter',   letter);
 
 app.use((request, response) => {
     response.status(404).json({ message: "Not Found" });
