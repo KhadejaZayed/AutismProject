@@ -149,4 +149,4 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-// TODO: Add Logout Function
+
