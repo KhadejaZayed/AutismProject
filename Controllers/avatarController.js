@@ -107,3 +107,82 @@ exports.buyPet = async (req, res) => {
     res.status(500).json({ message: 'Failed to purchase pet', error: err.message });
   }
 };
+
+exports.selectAvatar = async (req, res) => {
+  const {avatarId } = req.body;
+
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).populate('child');
+    if (!user || !user.child)
+      return res.status(404).json({ message: 'Child Not Found' });
+
+    const child = user.child;
+
+    await avatar.updateOne(
+      { _id: {$in: child.boughtAvatars}, isSelected: true}, //return the avatar which is the only selected
+      {$set: {isSelected: false}} //set its isSelected attribute to false 
+    );
+
+    //Select the required avatar and take the value of selectedAvatar
+    const selectedAvatar = await avatar.findByIdAndUpdate(
+      avatarId,
+      { isSelected: true },
+      { new: true }
+    );
+
+    if (!selectedAvatar)
+      return res.status(404).json({ message: 'Avatar has been not found' });
+
+    //make the current Avatar is the the selected Avatar 
+    //and its picture the child profile picture
+    child.currentAvatar = avatarId;
+    child.picture = selectedAvatar.avatarPicture;
+    await child.save();
+
+    res.json({ message: 'Avatar has been Selected Successfully', selectedAvatar});
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+exports.selectPet = async (req, res) => {
+  const {petId} = req.body;
+
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).populate('child');
+    if (!user || !user.child)
+      return res.status(404).json({ message: 'Child Not Found' });
+    
+    const child = user.child;
+
+    //Unselect the selected pet
+    await pet.updateOne(
+      { _id: {$in: child.boughtPets}, isSelected: true},
+      {$set: {isSelected: false}}
+    );
+
+    //Select the required pet and take the value of selectedPet
+    const selectedPet = await pet.findByIdAndUpdate(
+      petId,
+      { isSelected: true },
+      { new: true }
+    );
+    if (!selectedPet) return res.status(404).json({ message: 'Pet not found' });
+
+    //make the current Pet is the the selected Pet 
+    //and its picture the pet picture
+    child.currentPet = petId;
+    pet.picture = selectedPet.petPicture;
+    await child.save();
+
+    res.json({ message: 'Pet selected successfully', selectedPet });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
