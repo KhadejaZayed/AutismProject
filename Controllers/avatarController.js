@@ -1,6 +1,5 @@
-const {avatar, pet } = require('../Models/avatarModel');
-const User = require('../Models/userModel'); // Assuming the user has a `boughtAvatars` array
-const Child = require('../Models/childModel');
+const {avatar, pet} = require('../Models/avatarModel');
+const User = require('../Models/userModel'); 
 
 //Get all available avatars
 exports.getAllAvatars = async (req, res) => {
@@ -15,20 +14,20 @@ exports.getAllAvatars = async (req, res) => {
 //Get avatars the user has bought
 exports.getUserAvatars = async (req, res) => {
   try {
-    // const userId = req.user.id;
-    // const user = await User.findById(userId).populate('boughtAvatars');
-    
-    const user = await User.findById(req.user.id).populate({
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).populate({
       path: 'child',
-      populate: { path: 'boughtAvatars' } // assuming this is in childSchema
+      populate: { path: 'boughtAvatars' } 
     });
     
-    if(!user || !user.child) {
+    const child = user.child;
+    if(!user || !child) {
       return res.status(404).json({message: 'Child has been not found'});
     }
 
     res.status(200).json({
-      boughtAvatars: user.child.boughtAvatars || []
+      boughtAvatars: child.boughtAvatars || []
     });
 
   }catch(err){
@@ -52,12 +51,13 @@ exports.getUserPets = async (req, res) => {
       populate: { path: 'boughtPets' }
     });
 
-    if (!user || !user.child) {
+    const child = user.child;
+    if (!user || !child) {
       return res.status(404).json({ message: 'Child has been not found' });
     }
 
     res.status(200).json({
-        boughtPets: user.child.boughtPets || []
+        boughtPets: child.boughtPets || []
       });
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch user pets', error: err.message });
@@ -66,50 +66,84 @@ exports.getUserPets = async (req, res) => {
 
 exports.buyAvatar = async (req, res) => {
   try {
-    const childId = req.user.child;
-    const avatarId = req.body.avatarId;
+    const avatarId = req.body.avatarId; //from url
+    const userId = req.user.id; //from token
 
-    const child = await Child.findById(childId);
-    if (!child)
-        return res.status(404).json({ message: 'Child has been not found' });
+    const user = await User.findById(userId).populate('child');
+    if (!user || !user.child)
+      return res.status(404).json({ message: 'Child is Not Found' });
+
+    const child = user.child;
+    const selectedAvatar = await avatar.findById(avatarId); //selected Avatar to be buyed    
+    if (!selectedAvatar)
+      return res.status(404).json({ message: 'Avatar is not found' });
 
     if (child.boughtAvatars.includes(avatarId)) {
-      return res.status(400).json({ message: 'Avatar already purchased' });
+      return res.status(400).json({ message: 'Avatar has been already purchased' });
     }
 
+    //check if the coins are enough
+    const avatarPrice = selectedAvatar.price; 
+    if (child.coins < avatarPrice) {
+      return res.status(400).json({ message: 'Not enough coins to buy avatar' });
+    }
+
+    //deduct the coins and add avatar to the bought avatars
+    child.coins -= avatarPrice;
     child.boughtAvatars.push(avatarId);
     await child.save();
 
-    res.status(200).json({ message: 'Avatar has been purchased Successfully', boughtAvatars: child.boughtAvatars });
-  } catch (err) {
+    res.status(200).json({
+      message: 'Avatar has been Purchased Successfully',
+      boughtAvatars: child.boughtAvatars,
+      remainingCoins: child.coins
+    });
+
+  }catch(err){
     res.status(500).json({ message: 'Failed to purchase avatar', error: err.message });
   }
 };
 
 exports.buyPet = async (req, res) => {
   try {
-    const childId = req.user.child;
     const petId = req.body.petId;
+    const userId = req.user.id;
 
-    const child = await Child.findById(childId);
-    if (!child) 
-        return res.status(404).json({ message: 'Child haas been not found' });
+    const user = await User.findById(userId).populate('child');
+    if (!user || !user.child)
+      return res.status(404).json({ message: 'Child is Not Found' });
+
+    const child = user.child;
+    const selectedPet = await pet.findById(petId);
+    if (!selectedPet)
+      return res.status(404).json({ message: 'Pet is not found' });
 
     if (child.boughtPets.includes(petId)) {
-      return res.status(400).json({ message: 'Pet already purchased' });
+      return res.status(400).json({ message: 'Pet has been already purchased' });
     }
 
+    const petPrice = selectedPet.price;
+    if (child.coins < petPrice) {
+      return res.status(400).json({ message: 'Not enough coins to buy pet' });
+    }
+
+    child.coins -= petPrice;
     child.boughtPets.push(petId);
     await child.save();
 
-    res.status(200).json({ message: 'Pet purchased successfully', boughtPets: child.boughtPets });
+    res.status(200).json({
+      message: 'Pet has been Purchased Successfully',
+      boughtPets: child.boughtPets,
+      remainingCoins: child.coins
+    });
+
   } catch (err) {
     res.status(500).json({ message: 'Failed to purchase pet', error: err.message });
   }
 };
 
 exports.selectAvatar = async (req, res) => {
-  const {avatarId } = req.body;
+  const {avatarId} = req.body;
 
   try {
     const userId = req.user.id;
@@ -120,28 +154,28 @@ exports.selectAvatar = async (req, res) => {
 
     const child = user.child;
 
-    await avatar.updateOne(
-      { _id: {$in: child.boughtAvatars}, isSelected: true}, //return the avatar which is the only selected
-      {$set: {isSelected: false}} //set its isSelected attribute to false 
-    );
-
-    //Select the required avatar and take the value of selectedAvatar
-    const selectedAvatar = await avatar.findByIdAndUpdate(
-      avatarId,
-      { isSelected: true },
-      { new: true }
-    );
-
+    const selectedAvatar = await avatar.findById(avatarId);   
     if (!selectedAvatar)
-      return res.status(404).json({ message: 'Avatar has been not found' });
+      return res.status(404).json({ message: 'Avatar is not found' });
+    
+    if (!child.boughtAvatars.includes(avatarId)) {
+      return res.status(403).json({ message: 'Avatar has been Not Purchased by this child' });
+    }
+    
+    if(child.currentAvatar == avatarId)
+      return res.status(400).json({ message: 'Avatar has been already Selected' });
 
-    //make the current Avatar is the the selected Avatar 
-    //and its picture the child profile picture
+    //make the current avatar has the selected avatar id 
+    //update profile picture
     child.currentAvatar = avatarId;
     child.picture = selectedAvatar.avatarPicture;
     await child.save();
 
-    res.json({ message: 'Avatar has been Selected Successfully', selectedAvatar});
+    res.json({
+      message: 'Avatar has been Selected Successfully',
+      selectedAvatar,
+      currentAvatar: child.currentAvatar
+    });
 
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -150,37 +184,35 @@ exports.selectAvatar = async (req, res) => {
 
 exports.selectPet = async (req, res) => {
   const {petId} = req.body;
-
+  
   try {
     const userId = req.user.id;
-
+    
     const user = await User.findById(userId).populate('child');
     if (!user || !user.child)
       return res.status(404).json({ message: 'Child Not Found' });
     
     const child = user.child;
+    const selectedPet = await pet.findById(petId);   
+    if (!selectedPet)
+      return res.status(404).json({ message: 'Pet not found' });
 
-    //Unselect the selected pet
-    await pet.updateOne(
-      { _id: {$in: child.boughtPets}, isSelected: true},
-      {$set: {isSelected: false}}
-    );
+    if (!child.boughtPets.includes(petId)) {
+      return res.status(403).json({ message: 'Pet has been Not Purchased by this child' });
+    }
 
-    //Select the required pet and take the value of selectedPet
-    const selectedPet = await pet.findByIdAndUpdate(
-      petId,
-      { isSelected: true },
-      { new: true }
-    );
-    if (!selectedPet) return res.status(404).json({ message: 'Pet not found' });
+    if(child.currentPet == petId)
+      return res.status(400).json({ message: 'Pet has been already Selected' });
 
-    //make the current Pet is the the selected Pet 
-    //and its picture the pet picture
+    //Make the current pet has the selected pet id
     child.currentPet = petId;
-    pet.picture = selectedPet.petPicture;
     await child.save();
 
-    res.json({ message: 'Pet selected successfully', selectedPet });
+    res.json({
+      message: 'Pet has been Selected Successfully',
+      selectedPet,
+      currentPet: child.currentPet
+    });
 
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
