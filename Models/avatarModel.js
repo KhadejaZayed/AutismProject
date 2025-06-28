@@ -6,9 +6,7 @@ const avatarSchema = new mongoose.Schema({
         required: true
     },
     avatarPicture: String,
-    //"http://localhost:3000/uploads/appleq.png"
-    price:Number,
-    isBuyed: Boolean
+    price:Number
 });
 
 const petSchema = new mongoose.Schema({
@@ -17,13 +15,11 @@ const petSchema = new mongoose.Schema({
         required: true
     },
     petPicture: String,
-    //"http://localhost:3000/uploads/appleq.png"
-    price:Number,
-    isBuyed: Boolean
+    price:Number
 });
 
 const avatar = mongoose.model('Avatar', avatarSchema); 
-const pet    = mongoose.model('Pet', petSchema); 
+const pet    = mongoose.model('Pet',    petSchema); 
 
 module.exports = {
     avatar,
