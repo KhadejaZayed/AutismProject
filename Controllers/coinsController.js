@@ -1,14 +1,15 @@
-const User = require("../Models/childModel");
-const Child = require('../Models/childModel');
+const User = require("../Models/userModel");
 
-// Get current coin balance
+// Get current child coins
 exports.getCoins = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate('child');
+    const userId = req.user.id; //from token
+    const user = await User.findById(userId).populate('child');
     if (!user || !user.child)
         return res.status(404).json({ message: 'Child has been not found' });
 
-    return res.status(200).json({ coins: user.child.coins });
+    const child = user.child;
+    return res.status(200).json({ coins: child.coins });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to fetch coins', error: err.message });
   }
@@ -22,10 +23,11 @@ exports.addCoins = async (req, res) => {
     if (!user || !user.child)
         return res.status(404).json({ message: 'Child has been not found' });
 
-    user.child.coins += addedAmount;
-    await user.child.save();
+    const child = user.child;
+    child.coins += addedAmount;
+    await child.save();
 
-    return res.status(200).json({ message: `Added ${addedAmount}coins Successfuly,`, coins: user.child.coins });
+    return res.status(200).json({ message: `Added ${addedAmount}coins Successfuly,`, coins: child.coins });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to add coins', error: err.message });
   }
@@ -39,14 +41,15 @@ exports.deductCoins = async (req, res) => {
     if (!user || !user.child)
         return res.status(404).json({ message: 'Child has been not found' });
 
-    if (user.child.coins < deductedAmount) {
+    const child = user.child;
+    if (child.coins < deductedAmount) {
       return res.status(400).json({ message: 'Not enough coins!' });
     }
 
-    user.child.coins -= deductedAmount;
-    await user.child.save();
+    child.coins -= deductedAmount;
+    await child.save();
 
-    return res.status(200).json({ message: `Deducted ${deductedAmount}coins Successfully`, coins: user.child.coins });
+    return res.status(200).json({ message: `Deducted ${deductedAmount}coins Successfully`, coins: child.coins });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to deduct coins', error: err.message });
   }
@@ -59,15 +62,16 @@ exports.levelUp = async (req, res) => {
     if (!user || !user.child)
         return res.status(404).json({ message: 'Child has been not found' });
 
-    user.child.level += 1;
+    const child = user.child;
+    child.level += 1;
 
     // Optional: reward coins for leveling up
     //const reward = 10; 
-    //user.child.coins += reward;
+    //child.coins += reward;
+x
+    await child.save();
 
-    await user.child.save();
-
-    return res.status(200).json({message: 'Level up Successfully', level: user.child.level});
+    return res.status(200).json({message: 'Level up Successfully', level: child.level});
   } catch (err) {
     return res.status(500).json({ message: 'Failed to level up', error: err.message });
   }
@@ -78,9 +82,12 @@ exports.levelUp = async (req, res) => {
 //     try {
 //         let user = await User.findById(req.params.id);
 //         if (!user) return res.status(404).json({ message: "User not found" });
-
-//         await user.resetCoins();
-//         res.status(200).json({ message: "Coins reset to 0", coins: user.coins });
+//         
+//         const child = user.child;
+//         child.coins =0;
+//         await child.save();
+//
+//         res.status(200).json({ message: "Coins reset to 0", coins: child.coins });
 //     } catch (error) {
 //         res.status(500).json({ message: error.message });
 //     }
