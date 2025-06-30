@@ -14,8 +14,8 @@ const auth     = require("./Routes/authRoutes"),
       diary    = require('./Routes/diaryRoutes'),
       question = require('./Routes/questionRoutes'),
       avatar   = require('./Routes/avatarRoutes'),
-      letter   = require('./Routes/letterRoute'),
-      number   = require('./Routes/numberRoute');
+      letter   = require('./Routes/letterRoutes'),
+      number   = require('./Routes/numberRoutes');
       
 connect.then(()=>{
     console.log("DB connects successfully");
