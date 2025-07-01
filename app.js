@@ -4,7 +4,7 @@ const express    = require('express'),
       app        = express(),
       cors       = require("cors"),
       port       = process.env.PORT || 8080,
-      mongoose   = require('mongoose'), connect = mongoose.connect("mongodb://localhost:27017/");
+      mongoose   = require('mongoose'), connect = mongoose.connect("mongodb://127.0.0.1:27017/BrightpathDB");
 
 mongoose.set("strictQuery", false);
 
