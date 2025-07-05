@@ -8,4 +8,3 @@ router.post("/login",          authController.loginUser);
 router.post('/changePassword', authController.changePassword);
 
 module.exports = router;
-  

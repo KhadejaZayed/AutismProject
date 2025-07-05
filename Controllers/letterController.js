@@ -1,4 +1,3 @@
-
 //Model comes from route which define it want arModel or enModel
 exports.getAllLetters = (Model)=> async (req, res) => {
   try {
@@ -21,12 +20,12 @@ exports.getLetterById = (Model)=> async (req, res) => {
   }
 };
 
-exports.createLetter = (Model)=> async (req, res) => {
-  const newLetter = new Model(req.body);
-  try {
-    const savedLetter = await newLetter.save();
-    res.status(201).json(savedLetter);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
+// exports.createLetter = (Model)=> async (req, res) => {
+//   const newLetter = new Model(req.body);
+//   try {
+//     const savedLetter = await newLetter.save();
+//     res.status(201).json(savedLetter);
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
