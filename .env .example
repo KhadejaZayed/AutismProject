@@ -1,0 +1,2 @@
+JWT_SECRET=thisIsJustASecretKey
+PORT=3000

@@ -1,0 +1,7 @@
+# Don't upload dependencies
+node_modules/
+# Don't upload your secret config
+.env
+# Optional: Don't upload local logs or uploads
+uploads/
+*.log
